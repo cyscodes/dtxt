@@ -1,0 +1,2 @@
+python tool.py
+pause
