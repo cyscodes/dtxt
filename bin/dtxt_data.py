@@ -16,67 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import dtxt_proto2
+
 import dtxt_argument
+import dtxt_proto2
 import dtxt_util
 
 
-class Table:
-    COLUMN_NAME_ROW = 0
-
-    def __init__(self, excel_sheet):
-        self.excel_sheet = excel_sheet
-        self.row_count = self.excel_sheet.get_row_count()
-        self.column_index = {}
-        self.__init_column_index()
-
-    def get_data_rows(self):
-        if self.row_count <= 1:
-            return []
-        return range(1, self.row_count)
-
-    def get_data_text(self, data_row, column_name):
-        if not self.__is_data_row_valid(data_row) or not self.__is_column_name_valid(column_name):
-            return None
-        return self.excel_sheet.get_cell_value(data_row, self.column_index[column_name])
-
-    def __is_data_row_valid(self, data_row):
-        return self.__class__.COLUMN_NAME_ROW < data_row < self.row_count
-
-    def __is_column_name_valid(self, column_name):
-        return column_name in self.column_index
-
-    def __init_column_index(self):
-        if self.row_count < 1:
-            return
-        column_names = self.excel_sheet.get_row_values(self.__class__.COLUMN_NAME_ROW)
-        for index in range(0, len(column_names)):
-            self.column_index[column_names[index]] = index
-
-
-class Schema:
-    def __init__(self, schema_table):
-        self.records = None
-        self.__init_records(schema_table)
-
-    def __init_records(self, schema_table):
-        self.records = []
-        for data_row in schema_table.get_data_rows():
-            record = SchemaRecord(
-                schema_table.get_data_text(data_row, "column_name"),
-                schema_table.get_data_text(data_row, "proto_field_name"),
-                schema_table.get_data_text(data_row, "proto_field_type"))
-            self.records.append(record)
-
-
-class SchemaRecord:
-    def __init__(self, column_name=None, proto_field_name=None, proto_field_type=None):
-        self.column_name = column_name
-        self.proto_field_name = proto_field_name
-        self.proto_field_type = proto_field_type
-
-
 class Converter:
+    """
+    Utility class for converting str to specified data type
+    """
+
     def __init__(self):
         self.functions = {
             dtxt_proto2.EnumFieldType.DOUBLE: self.__to_float_value,
@@ -96,11 +46,22 @@ class Converter:
             dtxt_proto2.EnumFieldType.BYTES: self.__to_bytes_value
         }
 
-    def to_value(self, field_type, cell_text):
+    def to_value(self, field_type, text):
+        """
+        Convert text to data type according to proto message field type
+
+        :param field_type: (str)
+            Proto message field type. See EnumFieldType in dtxt_proto2.
+
+        :param text: (str)
+            Text data.
+
+        :return: (*)
+            Data of specified data type.
+        """
         if field_type not in self.functions:
-            print "Invalid field type: %s for cell text: %s" % (field_type, cell_text)
-            return None
-        return self.functions[field_type](cell_text)
+            return text
+        return self.functions[field_type](text)
 
     @staticmethod
     def __to_float_value(text):
@@ -136,52 +97,119 @@ class Converter:
 
 
 class Parser:
-    def __init__(self, table_name, table, schema):
-        self.table = table
-        self.schema = schema
-        self.module_name = dtxt_util.get_proto_module_name(table_name)
-        self.data_set_message_name = dtxt_util.get_proto_data_set_message_name(table_name)
-        self.data_set_message_field_name = dtxt_util.get_proto_data_set_message_field_name(table_name)
-        self.data_set_message = None
+    """
+    Data parser based on proto file and related Python module.
+    """
+
+    def __init__(self, table_name, data_table, schema_table):
+        self.table_name = table_name
+        self.data_table = data_table
+        self.schema_table = schema_table
+        self.data_set_message = None  # Instance of data set message class in proto Python module.
         self.data_converter = Converter()
 
     def parse(self):
+        """
+        Parse data and fill into data set message instance.
+        """
         self.__load_proto_module()
-        self.__fill_data_set()
+        self.__init_data_set_message()
+        self.__fill_data_set_message()
 
     def get_text_data(self):
+        """
+        Get readable proto data.
+
+        :return: (str)
+            Readable proto data str.
+        """
         if self.data_set_message is None:
-            print "Data set message in %s is none" % self.module_name
+            print("Data set message in {} is none".format(
+                dtxt_util.get_proto_module_name(self.table_name)
+            ))
             return None
         return str(self.data_set_message)
 
     def get_binary_data(self):
+        """
+        Get binary proto data.
+
+        :return: (str)
+            Binary proto data str.
+        """
         if self.data_set_message is None:
-            print "Data set message in %s is none" % self.module_name
+            print("Data set message in {} is none".format(
+                dtxt_util.get_proto_module_name(self.table_name)
+            ))
             return None
         return self.data_set_message.SerializeToString()
 
     def __load_proto_module(self):
+        """
+        Load proto Python module.
+        """
+        module_name = dtxt_util.get_proto_module_name(self.table_name)
         try:
-            sys.path.append(dtxt_argument.TEMP_DIRECTORY)
-            exec ("from %s import *" % self.module_name)
+            sys.path.append(dtxt_argument.DIRECTORY["TEMP_DIRECTORY"])
+            exec ("from {} import *".format(module_name))
         except BaseException:
-            print "Load module: %s failed." % self.module_name
+            print("Load module: {} failed.".format(module_name))
             raise
-        else:
-            self.data_set_message = getattr(sys.modules[self.module_name], self.data_set_message_name)()
 
-    def __fill_data_set(self):
+    def __init_data_set_message(self):
+        """
+        Instantiate data set message class in proto Python module.
+        """
+        # Get data set message class definition in proto Python module.
+        data_set_message_class = getattr(
+            sys.modules[dtxt_util.get_proto_module_name(self.table_name)],
+            dtxt_util.get_proto_data_set_message_name(self.table_name)
+        )
+
+        # Instantiate data set message class.
+        self.data_set_message = data_set_message_class()
+
+    def __fill_data_set_message(self):
+        """
+        Fill data into data set message field (Member variable of data set message instance).
+        """
         if self.data_set_message is None:
-            print "No data set message: %s" % self.data_set_message_name
+            print("No data set message with name: {}".format(
+                dtxt_util.get_proto_data_set_message_name(self.table_name)
+            ))
             return
-        data_set_message_field = self.data_set_message.__getattribute__(self.data_set_message_field_name)
-        for data_row in self.table.get_data_rows():
+        # Get data set message field variable.
+        data_set_message_field_name = dtxt_util.get_proto_data_set_message_field_name(self.table_name)
+        data_set_message_field = self.data_set_message.__getattribute__(data_set_message_field_name)
+
+        # Fill data into data set message field.
+        for data_row in self.data_table.get_data_rows():
             message = data_set_message_field.add()
             self.__fill_data(message, data_row)
 
     def __fill_data(self, message, data_row):
-        for record in self.schema.records:
-            cell_text = self.table.get_data_text(data_row, record.column_name)
-            field_value = self.data_converter.to_value(record.proto_field_type, cell_text)
-            message.__setattr__(record.proto_field_name, field_value)
+        """
+        Fill column data defined in schema table into data message.
+
+        :param message:
+            Data message instance.
+
+        :param data_row:
+            Row number in data table.
+        """
+        for schema_table_row in self.schema_table.get_data_rows():
+            data_column_name = self.schema_table.get_data_text(
+                schema_table_row,
+                dtxt_argument.SCHEMA_TABLE["COLUMN"]["COLUMN_NAME"]
+            )
+            proto_field_type = self.schema_table.get_data_text(
+                schema_table_row,
+                dtxt_argument.SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_TYPE"]
+            )
+            proto_field_name = self.schema_table.get_data_text(
+                schema_table_row,
+                dtxt_argument.SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_NAME"]
+            )
+            cell_text = self.data_table.get_data_text(data_row, data_column_name)
+            field_value = self.data_converter.to_value(proto_field_type, cell_text)
+            message.__setattr__(proto_field_name, field_value)

@@ -16,10 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import dtxt_argument
 
 
 def write_to_file(path, mode, data):
+    """
+    Write data to path in specified mode.
+    The directory will be auto-created if it does not exist.
+
+    :param path: (str)
+        Output file path.
+
+    :param mode: (str)
+        Write mode.
+
+    :param data: (str)
+        Data to write.
+    """
     # Create directory if not exist.
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
@@ -31,71 +45,37 @@ def write_to_file(path, mode, data):
     target_file.close()
 
 
-def to_unicode(text):
-    if isinstance(text, str):
-        # TODO: The text maybe not encoded in utf-8.
-        return text.decode("utf8")
-    if isinstance(text, unicode):
-        return text
-    print("Cannot convert input to unicode")
-    return None
-
-def to_utf8_string(text):
-    unicode_text = to_unicode(text)
-    if unicode_text is not None:
-        return unicode_text.encode("utf8")
-    return None
+def get_designer_table_path(filename):
+    return os.path.join(dtxt_argument.DIRECTORY["DESIGNER_TABLE_DIRECTORY"], filename)
 
 
-# TODO
-def get_designer_excel_path(filename):
-    return os.path.join(dtxt_argument.DESIGNER_TABLE_DIRECTORY, filename)
+def get_schema_table_path(filename):
+    return os.path.join(dtxt_argument.DIRECTORY["SCHEMA_DIRECTORY"], filename)
 
 
-# TODO
-def get_schema_excel_path(filename):
-    return os.path.join(dtxt_argument.SCHEMA_DIRECTORY, filename)
+def get_proto_file_path(table_name):
+    return os.path.join(dtxt_argument.DIRECTORY["TEMP_DIRECTORY"], "{}.proto".format(table_name))
 
 
-# TODO
-def get_proto_path(table_name):
-    return "%(directory)s/%(filename)s.proto" % dict(
-        directory=dtxt_argument.TEMP_DIRECTORY,
-        filename=table_name)
+def get_code_file_path(table_name):
+    return os.path.join(dtxt_argument.DIRECTORY["PROTO_CODE_DIRECTORY"], "{}.cs".format(table_name))
 
 
-# TODO
-def get_code_path(table_name):
-    return "%(directory)s/%(filename)s.cs" % dict(
-        directory=dtxt_argument.PROTO_CODE_DIRECTORY,
-        filename=table_name)
-
-
-# TODO
 def get_proto_text_data_path(table_name):
-    return "%(directory)s/%(table_name)s.txt" % dict(
-        directory=dtxt_argument.PROTO_DATA_DIRECTORY,
-        table_name=table_name)
+    return os.path.join(dtxt_argument.DIRECTORY["PROTO_DATA_DIRECTORY"], "{}.txt".format(table_name))
 
 
-# TODO
 def get_proto_binary_data_path(table_name):
-    return "%(directory)s/%(table_name)s.binary" % dict(
-        directory=dtxt_argument.PROTO_DATA_DIRECTORY,
-        table_name=table_name)
+    return os.path.join(dtxt_argument.DIRECTORY["PROTO_DATA_DIRECTORY"], "{}.binary".format(table_name))
 
 
 def get_proto_module_name(table_name):
-    return "%s_pb2" % table_name
+    return "{}_pb2".format(table_name)
 
 
 def get_proto_data_set_message_name(table_name):
-    return "%(table_name)s%(suffix)s" % dict(
-        table_name=table_name,
-        suffix=dtxt_argument.PROTO_DATA_SET_MESSAGE_NAME_SUFFIX)
+    return "{}{}".format(table_name, dtxt_argument.PROTO["DATA_SET_MESSAGE_NAME_SUFFIX"])
 
 
 def get_proto_data_set_message_field_name(table_name):
-    return "%(table_name)s%(suffix)s" % dict(
-        table_name=table_name,
-        suffix=dtxt_argument.PROTO_DATA_SET_MESSAGE_FIELD_NAME_SUFFIX)
+    return "{}{}".format(table_name, dtxt_argument.PROTO["DATA_SET_MESSAGE_FIELD_NAME_SUFFIX"])

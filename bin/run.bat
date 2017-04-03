@@ -1,2 +1,2 @@
-python tool.py
+python dtxt.py
 pause
