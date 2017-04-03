@@ -64,9 +64,10 @@ def generate_proto_csharp_code_file(table_name):
 
 if __name__ == '__main__':
     # Open database table
-    database_excel = dtxt_tepb.Tepb(dtxt_argument.DATABASE_TABLE["PATH"], dtxt_argument.DATABASE_TABLE["SHEET_NAME"])
-    database_excel.open_excel_file()
-    database_table = dtxt_table.create_table_by_excel_sheet(database_excel)
+    database_table = dtxt_table.create_table_by_excel_sheet(
+        dtxt_argument.DATABASE_TABLE["PATH"],
+        dtxt_argument.DATABASE_TABLE["SHEET_NAME"]
+    )
 
     # Export tables defined in database table
     for data_row in database_table.get_data_rows():
@@ -74,15 +75,19 @@ if __name__ == '__main__':
         sheet_name = database_table.get_data_text(data_row, dtxt_argument.DATABASE_TABLE["COLUMN"]["SHEET_NAME"])
         table_name = database_table.get_data_text(data_row, dtxt_argument.DATABASE_TABLE["COLUMN"]["TABLE_NAME"])
 
-        designer_excel = dtxt_tepb.Tepb(dtxt_util.get_designer_table_path(excel_name), sheet_name)
-        designer_excel.open_excel_file()
-        table = dtxt_table.create_table_by_excel_sheet(designer_excel)
-
-        schema_excel = dtxt_tepb.Tepb(dtxt_util.get_schema_table_path(excel_name), sheet_name)
-        schema_excel.open_excel_file()
-        schema = dtxt_table.create_table_by_excel_sheet(schema_excel)
+        table = dtxt_table.create_table_by_excel_sheet(
+            dtxt_util.get_designer_table_path(excel_name),
+            sheet_name
+        )
+        schema = dtxt_table.create_table_by_excel_sheet(
+            dtxt_util.get_schema_table_path(excel_name),
+            sheet_name
+        )
 
         generate_proto_file(schema, table_name)
         generate_proto_python_code_file(table_name)
         generate_proto_data_file(table_name, table, schema)
         generate_proto_csharp_code_file(table_name)
+
+    # Close database table
+    database_table.dispose()

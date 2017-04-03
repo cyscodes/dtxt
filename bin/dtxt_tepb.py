@@ -11,56 +11,63 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import xlrd
 
+
 class Tepb:
+    """
+    Class for operating excel files (include .xls and .xlsx format files).
+    """
 
     def __init__(self, filename):
+        """
+        Initialize.
+
+        :param filename: (str(utf-8 format) or unicode)
+            Filename of the excel file, including directory.
+        """
         if isinstance(filename, unicode):
             filename = filename.encode('utf-8')
         self.filename = filename.decode('utf-8')
         self.book = None
         self.data = None
 
-    def set_file_path(self, filename):
-        self.filename = filename
-
-    def file_type(self):
-        lowercaseFilename = self.filename.lower()
-        if lowercaseFilename.endswith('.xlsx') or lowercaseFilename.endswith('.xls'):
-            return 0
-        else:
-            return -1
-
     def open_excel_file_by_sheet_index(self, index):
-        if self.file_type() == 0:
-            self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
-            self.data = self.book.sheet_by_index(index)
-            print "\nSheet #%d  %s:\t\t %d row(s)\t %d column(s)\n" % (
-                index, self.data.name, self.data.nrows, self.data.ncols
-            )
+        if not self.__is_file_type_valid():
+            print("Error: Wrong file type!\n")
             return
-        else:
-            print "Error: Wrong file type!\n"
+        self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
+        self.data = self.book.sheet_by_index(index)
+        return
 
-    def open_excel_file_by_sheet_name(self, sheetName):
-        if self.file_type() == 0:
-            self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
-            self.data = self.book.sheet_by_name(sheetName)
-            print "\nSheet #%d  %s:\t\t %d row(s)\t %d column(s)\n" % (
-                self.data.number, sheetName, self.data.nrows, self.data.ncols
-            )
+    def open_excel_file_by_sheet_name(self, sheet_name):
+        if not self.__is_file_type_valid():
+            print("Error: Wrong file type!\n")
+            return
+        self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
+        self.data = self.book.sheet_by_name(sheet_name)
+        return
+
+    def close(self):
+        self.book.release_resources()
+        return
+
+    def get_row_count(self):
+        if self.data is None:
+            print "Error: No sheet opened!\n"
             return
         else:
-            print "Error: Wrong file type!\n"
+            return self.data.nrows
 
     def get_row_values(self, row):
         if self.data is None:
             print "Error: No sheet opened!\n"
             return
         else:
-            #print self.data.row_values(row)
             return self.data.row_values(row)
 
     def get_col_values(self, col):
@@ -68,24 +75,32 @@ class Tepb:
             print "Error: No sheet opened!\n"
             return
         else:
-            #print self.data.col_values(col)
             return self.data.col_values(col)
 
-    '''
-    value   type
-    0       empty
-    1       string
-    2       number
-    3       date
-    4       bool
-    5       error
-    '''
     def get_cell_value_type(self, row, col):
+        """
+        Get cell value type
+
+        :param row: (int)
+            Row number.
+
+        :param col: (int)
+            Column number.
+
+        :return: (int)
+            Cell type, see following list:
+            value   type
+            0       empty
+            1       string
+            2       number
+            3       date
+            4       bool
+            5       error
+        """
         if self.data is None:
             print "Error: No sheet opened!\n"
             return
         else:
-            #print self.data.cell(row, col).ctype
             return self.data.cell(row, col).ctype
 
     def get_cell_value(self, row, col):
@@ -93,7 +108,6 @@ class Tepb:
             print "Error: No sheet opened!\n"
             return
         else:
-            #print self.data.cell(row, col).value
             return self.data.cell(row, col).value
 
     ''' Write File ---- Save for later
@@ -105,9 +119,6 @@ class Tepb:
             self.data.put_cell(row, col, ctype, value, xf)
             return
     '''
-    def close(self):
-        self.book.release_resources()
-        return
 
     def info(self):
         print "\nExcel File:\t\t %s\n" % (self.filename)
@@ -116,9 +127,10 @@ class Tepb:
             return
         else:
             print "Sheet Index\t\tSheet Names"
-            #print self.book.sheets()
-            index = 0
-            while index < len(self.book.sheets()):
+            for index in range(0, self.book.nsheets):
                 print "\t%d\t\t\t%s" % (index, self.book.sheets()[index].name)
-                index += 1
         return
+
+    def __is_file_type_valid(self):
+        lowercaseFilename = self.filename.lower()
+        return lowercaseFilename.endswith('.xlsx') or lowercaseFilename.endswith('.xls')

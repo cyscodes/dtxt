@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import dtxt_tepb
+
 
 class Table:
     """
@@ -24,6 +26,12 @@ class Table:
     """
 
     def __init__(self):
+        pass
+
+    def dispose(self):
+        """
+        Free resources.
+        """
         pass
 
     def get_data_rows(self):
@@ -63,6 +71,8 @@ class ExcelTable(Table):
 
     __COLUMN_NAME_ROW = 0  # Row number of column name in excel sheet.
 
+    __DATA_ROW_START = 1  # Row number of the first data row in excel sheet.
+
     def __init__(self, excel_sheet):
         Table.__init__(self)
         self.__excel_sheet = excel_sheet
@@ -70,12 +80,15 @@ class ExcelTable(Table):
         self.__column_indexes = {}  # Dict of str, int pair. Key is column name, and value is column index.
         self.__init_column_indexes()
 
+    def dispose(self):
+        self.__excel_sheet.close()
+
     def get_data_rows(self):
         # No data rows.
-        if self.__row_count <= 1:
+        if self.__row_count <= self.__DATA_ROW_START:
             return []
 
-        return range(1, self.__row_count)
+        return range(self.__DATA_ROW_START, self.__row_count)
 
     def get_data_text(self, row_number, column_name):
         # No specified cell.
@@ -112,8 +125,8 @@ class ExcelTable(Table):
         """
         Initialize dict of column name, column index pair.
         """
-        # No column row.
-        if self.__row_count < 1:
+        # No column name row.
+        if self.__row_count < self.__DATA_ROW_START:
             return
 
         column_names = self.__excel_sheet.get_row_values(self.__class__.__COLUMN_NAME_ROW)
@@ -126,5 +139,7 @@ class ExcelTable(Table):
 #
 
 
-def create_table_by_excel_sheet(excel_sheet):
+def create_table_by_excel_sheet(filename, sheet_name):
+    excel_sheet = dtxt_tepb.Tepb(filename)
+    excel_sheet.open_excel_file_by_sheet_name(sheet_name)
     return ExcelTable(excel_sheet)
