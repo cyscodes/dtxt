@@ -17,7 +17,7 @@
 
 import os
 
-import dtxt_argument
+import dtxt_settings
 
 
 def write_to_file(path, mode, data):
@@ -46,27 +46,27 @@ def write_to_file(path, mode, data):
 
 
 def get_designer_table_path(filename):
-    return os.path.join(dtxt_argument.DIRECTORY["DESIGNER_TABLE_DIRECTORY"], filename)
+    return os.path.join(dtxt_settings.DataTable.Directory, filename)
 
 
 def get_schema_table_path(filename):
-    return os.path.join(dtxt_argument.DIRECTORY["SCHEMA_DIRECTORY"], filename)
+    return os.path.join(dtxt_settings.SchemaTable.Directory, filename)
 
 
 def get_proto_file_path(table_name):
-    return os.path.join(dtxt_argument.DIRECTORY["TEMP_DIRECTORY"], "{}.proto".format(table_name))
+    return os.path.join(dtxt_settings.TemporaryFile.Directory, "{}.proto".format(table_name))
 
 
 def get_code_file_path(table_name):
-    return os.path.join(dtxt_argument.DIRECTORY["PROTO_CODE_DIRECTORY"], "{}.cs".format(table_name))
+    return os.path.join(dtxt_settings.CSharpCodeFile.Directory, "{}.cs".format(table_name))
 
 
 def get_proto_text_data_path(table_name):
-    return os.path.join(dtxt_argument.DIRECTORY["PROTO_DATA_DIRECTORY"], "{}.txt".format(table_name))
+    return os.path.join(dtxt_settings.DataFile.Directory, "{}.txt".format(table_name))
 
 
 def get_proto_binary_data_path(table_name):
-    return os.path.join(dtxt_argument.DIRECTORY["PROTO_DATA_DIRECTORY"], "{}.binary".format(table_name))
+    return os.path.join(dtxt_settings.DataFile.Directory, "{}.binary".format(table_name))
 
 
 def get_proto_module_name(table_name):
@@ -74,8 +74,8 @@ def get_proto_module_name(table_name):
 
 
 def get_proto_data_set_message_name(table_name):
-    return "{}{}".format(table_name, dtxt_argument.PROTO["DATA_SET_MESSAGE_NAME_SUFFIX"])
+    return "{}{}".format(table_name, dtxt_settings.ProtoFile.DataSetMessageNameSuffix)
 
 
 def get_proto_data_set_message_field_name(table_name):
-    return "{}{}".format(table_name, dtxt_argument.PROTO["DATA_SET_MESSAGE_FIELD_NAME_SUFFIX"])
+    return "{}{}".format(table_name, dtxt_settings.ProtoFile.DataSetMessageFieldNameSuffix)

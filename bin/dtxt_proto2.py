@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import dtxt_util
-from dtxt_argument import SCHEMA_TABLE
+import dtxt_settings
 
 
 class EnumFieldRule:
@@ -212,8 +212,8 @@ def create_proto_by_schema_table(schema_table, table_name, package_name):
     # Create data message.
     data_message = Message(table_name, [])
     for schema_table_row in schema_table.get_data_rows():
-        proto_field_type = schema_table.get_data_text(schema_table_row, SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_TYPE"])
-        proto_field_name = schema_table.get_data_text(schema_table_row, SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_NAME"])
+        proto_field_type = schema_table.get_data_text(schema_table_row, dtxt_settings.SchemaTable.Column.ProtoFieldType)
+        proto_field_name = schema_table.get_data_text(schema_table_row, dtxt_settings.SchemaTable.Column.ProtoFieldName)
         message_field = MessageField(EnumFieldRule.REQUIRED, proto_field_type, proto_field_name, schema_table_row)
         data_message.fields.append(message_field)
 

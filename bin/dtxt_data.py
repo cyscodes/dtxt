@@ -17,7 +17,7 @@
 
 import sys
 
-import dtxt_argument
+import dtxt_settings
 import dtxt_proto2
 import dtxt_util
 
@@ -150,7 +150,7 @@ class Parser:
         """
         module_name = dtxt_util.get_proto_module_name(self.table_name)
         try:
-            sys.path.append(dtxt_argument.DIRECTORY["TEMP_DIRECTORY"])
+            sys.path.append(dtxt_settings.TemporaryFile.Directory)
             exec ("from {} import *".format(module_name))
         except BaseException:
             print("Load module: {} failed.".format(module_name))
@@ -200,15 +200,15 @@ class Parser:
         for schema_table_row in self.schema_table.get_data_rows():
             data_column_name = self.schema_table.get_data_text(
                 schema_table_row,
-                dtxt_argument.SCHEMA_TABLE["COLUMN"]["COLUMN_NAME"]
+                dtxt_settings.SchemaTable.Column.ColumnName
             )
             proto_field_type = self.schema_table.get_data_text(
                 schema_table_row,
-                dtxt_argument.SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_TYPE"]
+                dtxt_settings.SchemaTable.Column.ProtoFieldType
             )
             proto_field_name = self.schema_table.get_data_text(
                 schema_table_row,
-                dtxt_argument.SCHEMA_TABLE["COLUMN"]["PROTO_FIELD_NAME"]
+                dtxt_settings.SchemaTable.Column.ProtoFieldName
             )
             cell_text = self.data_table.get_data_text(data_row, data_column_name)
             field_value = self.data_converter.to_value(proto_field_type, cell_text)

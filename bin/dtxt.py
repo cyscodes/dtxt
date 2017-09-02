@@ -15,17 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import dtxt_argument
+import dtxt_settings
 import dtxt_code
 import dtxt_data
 import dtxt_proto2
 import dtxt_table
-import dtxt_tepb
 import dtxt_util
 
 
 def generate_proto_file(schema, table_name):
-    proto = dtxt_proto2.create_proto_by_schema_table(schema, table_name, dtxt_argument.PROTO["PACKAGE_NAME"])
+    proto = dtxt_proto2.create_proto_by_schema_table(schema, table_name, dtxt_settings.ProtoFile.PackageName)
     dtxt_util.write_to_file(
         dtxt_util.get_proto_file_path(table_name),
         "wb+",
@@ -65,15 +64,15 @@ def generate_proto_csharp_code_file(table_name):
 if __name__ == '__main__':
     # Open database table
     database_table = dtxt_table.create_table_by_excel_sheet(
-        dtxt_argument.DATABASE_TABLE["PATH"],
-        dtxt_argument.DATABASE_TABLE["SHEET_NAME"]
+        dtxt_settings.CatalogTable.FilePath,
+        dtxt_settings.CatalogTable.SheetName
     )
 
     # Export tables defined in database table
     for data_row in database_table.get_data_rows():
-        excel_name = database_table.get_data_text(data_row, dtxt_argument.DATABASE_TABLE["COLUMN"]["EXCEL_NAME"])
-        sheet_name = database_table.get_data_text(data_row, dtxt_argument.DATABASE_TABLE["COLUMN"]["SHEET_NAME"])
-        table_name = database_table.get_data_text(data_row, dtxt_argument.DATABASE_TABLE["COLUMN"]["TABLE_NAME"])
+        excel_name = database_table.get_data_text(data_row, dtxt_settings.CatalogTable.Column.ExcelName)
+        sheet_name = database_table.get_data_text(data_row, dtxt_settings.CatalogTable.Column.SheetName)
+        table_name = database_table.get_data_text(data_row, dtxt_settings.CatalogTable.Column.TableName)
 
         table = dtxt_table.create_table_by_excel_sheet(
             dtxt_util.get_designer_table_path(excel_name),
