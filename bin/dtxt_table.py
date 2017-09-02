@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import dtxt_tepb
+import dtxt_table_impl
 
 
 class Table:
@@ -140,6 +140,6 @@ class ExcelTable(Table):
 
 
 def create_table_by_excel_sheet(filename, sheet_name):
-    excel_sheet = dtxt_tepb.Tepb(filename)
+    excel_sheet = dtxt_table_impl.Tepb(filename)
     excel_sheet.open_excel_file_by_sheet_name(sheet_name)
     return ExcelTable(excel_sheet)
