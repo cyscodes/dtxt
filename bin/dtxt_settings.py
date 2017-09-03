@@ -48,6 +48,11 @@ class SchemaTable:
         ProtoFieldType = u'proto_field_type'
 
 
+class ExcelSettings:
+    ColumnNameRow = 0
+
+    DataRowStart = 1
+
 #
 # Output Settings
 #

@@ -15,6 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+class CellType:
+    Empty = 0
+
+    String = 1
+
+    Number = 2
+
+    Date = 3
+
+    Bool = 4
+
+    Error = 5
+
 
 class Table:
     """
@@ -55,6 +68,7 @@ class Table:
             Data text of the cell.
         """
         return None
+
 
 #
 # Factory methods for instantiating Table.

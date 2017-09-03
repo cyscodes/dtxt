@@ -17,6 +17,7 @@
 
 import xlrd
 from dtxt_table import Table
+from dtxt_settings import ExcelSettings
 
 
 class Excel:
@@ -36,12 +37,13 @@ class Excel:
         self.book = None
         self.data = None
 
-    def open_excel_file_by_sheet_name(self):
+    def open(self):
         if not self.__is_file_type_valid():
-            print("Error: Wrong file type!\n")
-            return
-        self.book = xlrd.open_workbook(self.__filename, encoding_override="utf-8")
+            raise ValueError("Invalid filename", self.__filename)
+        self.book = xlrd.open_workbook(self.__filename, encoding_override=u'utf-8')
         self.data = self.book.sheet_by_name(self.__sheet_name)
+        if self.book is None:
+            raise ValueError("Invalid sheet name", self.__sheet_name)
         return
 
     def close(self):
@@ -49,27 +51,18 @@ class Excel:
         return
 
     def get_row_count(self):
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
+        if self.data is not None:
             return self.data.nrows
 
     def get_row_values(self, row):
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
+        if self.data is not None:
             return self.data.row_values(row)
 
-    def get_col_values(self, col):
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
+    def get_column_values(self, col):
+        if self.data is not None:
             return self.data.col_values(col)
 
-    def get_cell_value_type(self, row, col):
+    def get_cell_type(self, row, col):
         """
         Get cell value type
 
@@ -89,17 +82,11 @@ class Excel:
             4       bool
             5       error
         """
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
+        if self.data is not None:
             return self.data.cell(row, col).ctype
 
     def get_cell_value(self, row, col):
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
+        if self.data is not None:
             return self.data.cell(row, col).value
 
     def __is_file_type_valid(self):
@@ -112,17 +99,13 @@ class ExcelTable(Table):
     Config table written in excel sheets.
     """
 
-    __COLUMN_NAME_ROW = 0  # Row number of column name in excel sheet.
-
-    __DATA_ROW_START = 1  # Row number of the first data row in excel sheet.
-
     def __init__(self, filename, sheet_name):
         Table.__init__(self)
         excel_sheet = Excel(filename, sheet_name)
-        excel_sheet.open_excel_file_by_sheet_name()
+        excel_sheet.open()
         self.__excel_sheet = excel_sheet
         self.__row_count = self.__excel_sheet.get_row_count()  # Total row count of excel sheet.
-        self.__column_indexes = {}  # Dict of str, int pair. Key is column name, and value is column index.
+        self.__column_indexes = {}  # Dict of unicode, int pair. Key is column name, and value is column index.
         self.__init_column_indexes()
 
     def dispose(self):
@@ -130,10 +113,10 @@ class ExcelTable(Table):
 
     def get_data_rows(self):
         # No data rows.
-        if self.__row_count <= self.__DATA_ROW_START:
+        if self.__row_count <= ExcelSettings.DataRowStart:
             return []
 
-        return range(self.__DATA_ROW_START, self.__row_count)
+        return range(ExcelSettings.DataRowStart, self.__row_count)
 
     def get_data_text(self, row_number, column_name):
         # No specified cell.
@@ -152,7 +135,7 @@ class ExcelTable(Table):
         :return: (bool)
            True if data row is within row count and not column name row, False otherwise.
         """
-        return self.__class__.__COLUMN_NAME_ROW < data_row < self.__row_count
+        return ExcelSettings.ColumnNameRow < data_row < self.__row_count
 
     def __is_column_name_valid(self, column_name):
         """
@@ -170,10 +153,6 @@ class ExcelTable(Table):
         """
         Initialize dict of column name, column index pair.
         """
-        # No column name row.
-        if self.__row_count < self.__DATA_ROW_START:
-            return
-
-        column_names = self.__excel_sheet.get_row_values(self.__class__.__COLUMN_NAME_ROW)
+        column_names = self.__excel_sheet.get_row_values(ExcelSettings.ColumnNameRow)
         for index, column_name in enumerate(column_names):
             self.__column_indexes[column_name] = index
