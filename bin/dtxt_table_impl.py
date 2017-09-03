@@ -1,4 +1,4 @@
-# coding=utf8
+# coding=utf-8
 
 # Copyright (C) 2017 Daryl Caster, Tyler Murphy
 #
@@ -16,40 +16,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import xlrd
+from dtxt_table import Table
 
 
-class Tepb:
+class Excel:
     """
     Class for operating excel files (include .xls and .xlsx format files).
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, sheet_name):
         """
         Initialize.
 
         :param filename: (str(utf-8 format) or unicode)
             Filename of the excel file, including directory.
         """
-        if isinstance(filename, unicode):
-            filename = filename.encode('utf-8')
-        self.filename = filename.decode('utf-8')
+        self.__filename = filename
+        self.__sheet_name = sheet_name
         self.book = None
         self.data = None
 
-    def open_excel_file_by_sheet_index(self, index):
+    def open_excel_file_by_sheet_name(self):
         if not self.__is_file_type_valid():
             print("Error: Wrong file type!\n")
             return
-        self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
-        self.data = self.book.sheet_by_index(index)
-        return
-
-    def open_excel_file_by_sheet_name(self, sheet_name):
-        if not self.__is_file_type_valid():
-            print("Error: Wrong file type!\n")
-            return
-        self.book = xlrd.open_workbook(self.filename, encoding_override="utf8")
-        self.data = self.book.sheet_by_name(sheet_name)
+        self.book = xlrd.open_workbook(self.__filename, encoding_override="utf-8")
+        self.data = self.book.sheet_by_name(self.__sheet_name)
         return
 
     def close(self):
@@ -110,27 +102,78 @@ class Tepb:
         else:
             return self.data.cell(row, col).value
 
-    ''' Write File ---- Save for later
-    def set_cell_value(self, row, col, value, ctype = 1, xf = 0):
-        if self.data is None:
-            print "Error: No sheet opened!\n"
-            return
-        else:
-            self.data.put_cell(row, col, ctype, value, xf)
-            return
-    '''
-
-    def info(self):
-        print "\nExcel File:\t\t %s\n" % (self.filename)
-        if self.book is None:
-            print "Warning: No file opened!\n"
-            return
-        else:
-            print "Sheet Index\t\tSheet Names"
-            for index in range(0, self.book.nsheets):
-                print "\t%d\t\t\t%s" % (index, self.book.sheets()[index].name)
-        return
-
     def __is_file_type_valid(self):
-        lowercaseFilename = self.filename.lower()
+        lowercaseFilename = self.__filename.lower()
         return lowercaseFilename.endswith('.xlsx') or lowercaseFilename.endswith('.xls')
+
+
+class ExcelTable(Table):
+    """
+    Config table written in excel sheets.
+    """
+
+    __COLUMN_NAME_ROW = 0  # Row number of column name in excel sheet.
+
+    __DATA_ROW_START = 1  # Row number of the first data row in excel sheet.
+
+    def __init__(self, filename, sheet_name):
+        Table.__init__(self)
+        excel_sheet = Excel(filename, sheet_name)
+        excel_sheet.open_excel_file_by_sheet_name()
+        self.__excel_sheet = excel_sheet
+        self.__row_count = self.__excel_sheet.get_row_count()  # Total row count of excel sheet.
+        self.__column_indexes = {}  # Dict of str, int pair. Key is column name, and value is column index.
+        self.__init_column_indexes()
+
+    def dispose(self):
+        self.__excel_sheet.close()
+
+    def get_data_rows(self):
+        # No data rows.
+        if self.__row_count <= self.__DATA_ROW_START:
+            return []
+
+        return range(self.__DATA_ROW_START, self.__row_count)
+
+    def get_data_text(self, row_number, column_name):
+        # No specified cell.
+        if not self.__is_data_row_valid(row_number) or not self.__is_column_name_valid(column_name):
+            return None
+
+        return self.__excel_sheet.get_cell_value(row_number, self.__column_indexes[column_name])
+
+    def __is_data_row_valid(self, data_row):
+        """
+        Is data row within valid range.
+
+        :param data_row: (int)
+            Data row number.
+
+        :return: (bool)
+           True if data row is within row count and not column name row, False otherwise.
+        """
+        return self.__class__.__COLUMN_NAME_ROW < data_row < self.__row_count
+
+    def __is_column_name_valid(self, column_name):
+        """
+        Is column name defined.
+
+        :param column_name: (str)
+            Column name.
+
+        :return: (bool)
+            True if column name is defined, False otherwise.
+        """
+        return column_name in self.__column_indexes
+
+    def __init_column_indexes(self):
+        """
+        Initialize dict of column name, column index pair.
+        """
+        # No column name row.
+        if self.__row_count < self.__DATA_ROW_START:
+            return
+
+        column_names = self.__excel_sheet.get_row_values(self.__class__.__COLUMN_NAME_ROW)
+        for index, column_name in enumerate(column_names):
+            self.__column_indexes[column_name] = index
